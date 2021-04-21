@@ -29,16 +29,16 @@ public class Sim3D : MonoBehaviour
         handle = init_array();
         Debug.Log("Results pointer (host): " + handle); 
         Marshal.Copy(handle, buffer, 0, 128*128*4);
-        texture.LoadRawTextureData(buffer); // TODO
-        texture.Apply();
+        // texture.LoadRawTextureData(buffer); // TODO
+        // texture.Apply();
 	}
 	
 	void Update()
 	{
-		handle = init_array();
-		Marshal.Copy(handle, buffer, 0, 128*128*4);
-		image.LoadRawTextureData(buffer);
-		image.Apply();
+		// handle = init_array();
+		// Marshal.Copy(handle, buffer, 0, 128*128*4);
+		// image.LoadRawTextureData(buffer);
+		// image.Apply();
 		// TODO: clear the host data pointer?
 	}
 }
