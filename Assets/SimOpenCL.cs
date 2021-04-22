@@ -7,33 +7,25 @@ using UnityEngine;
 public class SimOpenCL : MonoBehaviour
 {
     [DllImport("lbmaf")]
-    static extern IntPtr init_array();
-    [DllImport("lbmaf")]
-    static extern IntPtr init_array_ptr();
+    static extern void init_array_opencl(IntPtr texture);
 
-    private byte[] buffer;
-	private Texture2D image;
-	private IntPtr handle;
+	private Texture2D tex;
+    private Material material;
 
 	void Start()
 	{
-		buffer = new byte[128*128*4];
-		image = new Texture2D(128, 128, TextureFormat.RGBA32, false);
+		tex = new Texture2D(128, 128, TextureFormat.RGBA32, false);
+		material = GetComponent<Renderer>().material;
+        material.mainTexture = tex;
+
 		GetComponent<Renderer>().material.mainTexture = image;
+
         Debug.Log("Simulation started!");
-        handle = init_array();
-        Debug.Log("Results pointer (host): " + handle); 
-        Marshal.Copy(handle, buffer, 0, 128*128*4);
-        image.LoadRawTextureData(buffer);
-        image.Apply();
+        init_array_opencl(tex.GetNativeTexturePtr());
 	}
 	
 	void Update()
 	{
-		handle = init_array();
-		Marshal.Copy(handle, buffer, 0, 128*128*4);
-		image.LoadRawTextureData(buffer);
-		image.Apply();
-		// TODO: clear the host data pointer?
+		
 	}
 }

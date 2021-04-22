@@ -1,22 +1,9 @@
 #[macro_use]
 extern crate glium;
-extern crate gl;
-
-use gl::types::*;
 use glium::{glutin, Surface};
 use arrayfire as af;
-use af_opencl_interop as afcl;
-use ocl::builders::ContextProperties;
-
-use ocl::ProQue;
-
-use takeable_option::Takeable;
 
 fn main() {
-    af::set_device(0);
-    af::set_backend(af::Backend::OPENCL);
-    af::info();
-    
     let event_loop = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new();
     let cb = glutin::ContextBuilder::new();
