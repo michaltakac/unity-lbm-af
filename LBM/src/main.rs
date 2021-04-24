@@ -45,6 +45,9 @@ fn main() {
         gl::ClearColor(0.0, 1.0, 0.333, 1.0);
     }
 
+    println!("Pixel format of the window's GL context: {:?}", gl_window.get_pixel_format());
+
+    // Arrayfire stuff
     let af_buffer = af::constant(0u8, af::dim4!(8, 8, 4));
 
     let af_did = afcl::get_device_id();
@@ -54,30 +57,6 @@ fn main() {
     let _devid = unsafe { ocl::core::DeviceId::from_raw(af_did) };
     let context = unsafe { ocl::core::Context::from_raw_copied_ptr(af_ctx) };
     let queue = unsafe { ocl::core::CommandQueue::from_raw_copied_ptr(af_que) };
-
-    // Fetch cl_mem from ArrayFire Array
-    let ptr = unsafe { af_buffer.device_ptr() };
-    let buffer = unsafe { ocl::core::Mem::from_raw_copied_ptr(ptr) };
-    af::sync(af::get_device());
-    let mut out = vec![0u8; 256];
-    unsafe {
-        let ptr = af_buffer.device_ptr();
-        let obuf = ocl::core::Mem::from_raw_copied_ptr(ptr);
-
-        ocl::core::enqueue_read_buffer(
-            &queue,
-            &obuf,
-            true,
-            0,
-            &mut out,
-            None::<ocl::core::Event>,
-            None::<&mut ocl::core::Event>
-        ).unwrap();
-       
-    }
-    println!("Value taken from GPU buffer on host after ArrayFire operation: {:?}", out[0]);
- 
-    println!("Pixel format of the window's GL context: {:?}", gl_window.get_pixel_format());
 
     let texture_data = vec![0u8; 256];
     let texture = unsafe {
