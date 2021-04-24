@@ -45,14 +45,14 @@ fn main() {
         gl::ClearColor(0.0, 1.0, 0.333, 1.0);
     }
 
-    let af_buffer = af::constant(0f32, af::dim4!(8, 8, 4));
+    let af_buffer = af::constant(0u8, af::dim4!(8, 8, 4));
 
     let af_did = afcl::get_device_id();
     let af_ctx = afcl::get_context(false);
     let af_que = afcl::get_queue(false);
 
     let _devid = unsafe { ocl::core::DeviceId::from_raw(af_did) };
-    let contx = unsafe { ocl::core::Context::from_raw_copied_ptr(af_ctx) };
+    let context = unsafe { ocl::core::Context::from_raw_copied_ptr(af_ctx) };
     let queue = unsafe { ocl::core::CommandQueue::from_raw_copied_ptr(af_que) };
 
     // Fetch cl_mem from ArrayFire Array
@@ -76,19 +76,10 @@ fn main() {
        
     }
     println!("Value taken from GPU buffer on host after ArrayFire operation: {:?}", out[0]);
-
-    // Choose platform & device(s) to use. Create a context, queue
-    let platform = ocl::Platform::default();
-    println!("platform: {:?}", &platform);
-    // let device = ocl::Device::first(platform).unwrap();
-    // let context = ocl_interop::get_context().expect("Cannot find GL's device in CL");
-    // println!("OpenGL context pointer: {:?}", &context);
-    // let queue = ocl::Queue::new(&context, device, None).unwrap();
-    let dims = [256, 1, 1];
  
     println!("Pixel format of the window's GL context: {:?}", gl_window.get_pixel_format());
 
-    let texture_data = vec![0u8; dims[0]];
+    let texture_data = vec![0u8; 256];
     let texture = unsafe {
         let mut texture = 0;
         gl::GenTextures(1, &mut texture);
@@ -99,11 +90,11 @@ fn main() {
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
         assert!(texture != 0, "GL Texture cannot be empty");
         gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA as GLint, 8, 8, 0, gl::RGBA, gl::UNSIGNED_BYTE, texture_data.as_ptr() as *const u8 as *const c_void);
-        // gl::GenerateMipmap(gl::TEXTURE_2D);
+        gl::GenerateMipmap(gl::TEXTURE_2D);
         texture
     };
 
-    // Create a `Buffer`: TODO
+    // Create a `Buffer`:
     let cl_buffer = unsafe {
         ocl::core::create_from_gl_texture_2d(
             &context,
@@ -114,82 +105,28 @@ fn main() {
         ).unwrap()
     };
 
-    // let cl_buffer = ocl::Buffer::builder().queue(queue.clone()).len(dims[0]).copy_host_slice(&vec).build().unwrap();
-    // let cl_buffer = unsafe {
-    //     ocl::core::create_buffer(
-    //         &context,
-    //         ocl::core::MEM_READ_WRITE | ocl::core::MEM_COPY_HOST_PTR,
-    //         dims[0],
-    //         Some(&vec),
-    //     )
-    //     .unwrap()
-    // };
-
-    // // get GL Objects
-    // let mut acquire_globj_event: ocl::Event = ocl::Event::empty();
-    // cl_buffer.cmd()
-    //     .gl_acquire()
-    //     .enew(&mut acquire_globj_event)
-    //     .enq()
-    //     .unwrap();
-    // let mut vec_result = vec![0u8; dims[0]];
-
-    // assert!(
-    //     (dims[0] * std::mem::size_of::<u8>())
-    //         == std::mem::size_of::<[u8; 8]>()
-    // );
-
-    // // Read results from the device into result_buffer's local vector:
-    // // result_buffer.read(&mut vec_result).enq().unwrap();
-    // let mut read_buffer_event: ocl::Event = ocl::Event::empty();
-    // unsafe {
-    //     cl_buffer
-    //         .read(&mut vec_result)
-    //         .block(false)
-    //         .queue(&queue)
-    //         .enew(&mut read_buffer_event)
-    //         .enq()
-    //         .unwrap();
-    // }
-
-    // // Release GL OBJs
-    // cl_buffer.cmd()
-    //     .gl_release()
-    //     // .ewait(&kernel_run_event)
-    //     .ewait(&read_buffer_event)
-    //     .enq()
-    //     .unwrap();
-
-    queue.finish().unwrap(); //sync up before switching to arrayfire
-
-    // Add custom device, context and associated queue to ArrayFire
-    afcl::add_device_context(device.as_raw(), context.as_ptr(), queue.as_ptr());
-    afcl::set_device_context(device.as_raw(), context.as_ptr());
+    ocl::core::finish(&queue).unwrap(); //sync up before switching to arrayfire
     af::info();
 
-    let mut af_buffer = af::Array::new_from_device_ptr(
+    let mut texture_buffer = af::Array::new_from_device_ptr(
         cl_buffer.as_ptr() as *mut u8,
-        af::Dim4::new(&[dims[0] as u64, 1, 1, 1]),
+        af::dim4!(8, 8, 4),
     );
     println!("CL buffer ptr: {:?}", cl_buffer.as_ptr());
-    println!("CL buffer ptr: {:?}", cl_buffer.as_ptr() as *mut u8);
     println!("Current active device: {}", af::get_device());
-    println!("hi");
-    // af::af_print!("GPU Buffer before modification:", &af_buffer);
 
-    // af_buffer = af_buffer + 10u8;
+    af::af_print!("GPU Buffer before modification:", &af_buffer);
 
-    // af::af_print!("GPU Buffer after modification:", &af_buffer);
-    println!("hi");
+    texture_buffer = af_buffer + 10u8;
+
+    af::af_print!("GPU Buffer after modification:", &texture_buffer);
 
     af::sync(af::get_device());
-    let mut vec = vec![0u8; dims[0]];
+    let mut vec = vec![0u8; 256];
     unsafe {
-        let ptr = af_buffer.device_ptr();
-        // println!("ptr: {:?}", &ptr);
+        let ptr = texture_buffer.device_ptr();
         let obuf = ocl::core::Mem::from_raw_copied_ptr(ptr);
 
-    //     // Read results from the device into a vector:
         ocl::core::enqueue_read_buffer(
             &queue,
             &obuf,
@@ -201,11 +138,7 @@ fn main() {
         ).unwrap();
        
     }
-    println!("hi");
     println!("GPU buffer on host after ArrayFire operation: {:?}", vec);
-
-    // let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image, (512, 512));
-    // let opengl_texture = glium::texture::Texture2d::new(&display, raw_image).unwrap();
 
     // let vertex_buffer = {
     //     #[derive(Copy, Clone)]
@@ -253,11 +186,11 @@ fn main() {
     event_loop.run(move |event, _, control_flow| {
         unsafe { gl::Viewport(0, 0, 800, 800) }
         // Update texture
-        
+        // TODO
 
         // build uniforms
         // let uniforms = uniform! {
-        //     tex: &opengl_texture
+        //     tex: &texture
         // };
 
         unsafe {
@@ -265,13 +198,7 @@ fn main() {
         }
 
         // drawing a frame
-        // let mut target = display.draw();
-        // // target.clear_color(0.0, 0.0, 0.0, 0.0);
-        // target.draw(&vertex_buffer, &index_buffer, &program, &uniforms, &Default::default()).unwrap();
-        // target.finish().unwrap();
-        // let mut target = glium::Frame::new(gl_window, gl_window.window().inner_size().into());
-        // target.clear_color(0.0, 1.0, 0.0, 1.0);
-        // target.finish().unwrap();
+        // TODO
 
         gl_window.swap_buffers().unwrap();
         std::thread::sleep(std::time::Duration::from_millis(5));
