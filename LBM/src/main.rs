@@ -13,10 +13,14 @@ use ocl::builders::ContextProperties;
 
 use ocl::ProQue;
 
+extern crate image;
+use image::GenericImage;
+
 use takeable_option::Takeable;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::io::Cursor;
 use std::os::raw::c_void;
 
 fn main() {
@@ -25,7 +29,10 @@ fn main() {
     af::info();
 
     let event_loop = glutin::event_loop::EventLoop::new();
-    let wb = glutin::window::WindowBuilder::new();
+    let size: glutin::dpi::LogicalSize<u32> = (800, 800).into();
+    let wb = glutin::window::WindowBuilder::new()
+        .with_inner_size(size)
+        .with_title("Hellow world");
     let cb = glutin::ContextBuilder::new();
     let gl_window = cb
         .build_windowed(wb, &event_loop)
@@ -38,55 +45,63 @@ fn main() {
         gl::ClearColor(0.0, 1.0, 0.333, 1.0);
     }
 
-    let a = af::randu::<u8>(af::dim4!(8, 8, 3));
-    let mut image = vec!(0u8; a.elements());
-    a.host(&mut image);
-    let img_ptr: *const _ = &image;
+    let af_buffer = af::constant(0f32, af::dim4!(8, 8, 4));
+
+    let af_did = afcl::get_device_id();
+    let af_ctx = afcl::get_context(false);
+    let af_que = afcl::get_queue(false);
+
+    let _devid = unsafe { ocl::core::DeviceId::from_raw(af_did) };
+    let contx = unsafe { ocl::core::Context::from_raw_copied_ptr(af_ctx) };
+    let queue = unsafe { ocl::core::CommandQueue::from_raw_copied_ptr(af_que) };
+
+    // Fetch cl_mem from ArrayFire Array
+    let ptr = unsafe { af_buffer.device_ptr() };
+    let buffer = unsafe { ocl::core::Mem::from_raw_copied_ptr(ptr) };
+    af::sync(af::get_device());
+    let mut out = vec![0u8; 256];
+    unsafe {
+        let ptr = af_buffer.device_ptr();
+        let obuf = ocl::core::Mem::from_raw_copied_ptr(ptr);
+
+        ocl::core::enqueue_read_buffer(
+            &queue,
+            &obuf,
+            true,
+            0,
+            &mut out,
+            None::<ocl::core::Event>,
+            None::<&mut ocl::core::Event>
+        ).unwrap();
+       
+    }
+    println!("Value taken from GPU buffer on host after ArrayFire operation: {:?}", out[0]);
 
     // Choose platform & device(s) to use. Create a context, queue
-    let platform = ocl::Platform::first().unwrap();
+    let platform = ocl::Platform::default();
     println!("platform: {:?}", &platform);
-    let af_did = afcl::get_device_id();
-    let device_id = unsafe { ocl::core::DeviceId::from_raw(af_did) };
-    let device = ocl::Device::by_idx_wrap(platform, af_did as usize).unwrap();
-    println!("device id: {:?}", &device_id);
-    println!("af device id: {:?}", &af_did);
-    println!("device: {:?}", &device);
-
-    let context = ocl_interop::get_context().expect("Cannot find GL's device in CL");
-    println!("OpenGL context pointer: {:?}", &context);
-    let queue = ocl::Queue::new(&context, device, None).unwrap();
+    // let device = ocl::Device::first(platform).unwrap();
+    // let context = ocl_interop::get_context().expect("Cannot find GL's device in CL");
+    // println!("OpenGL context pointer: {:?}", &context);
+    // let queue = ocl::Queue::new(&context, device, None).unwrap();
     let dims = [256, 1, 1];
  
     println!("Pixel format of the window's GL context: {:?}", gl_window.get_pixel_format());
 
-
-    let mut gl_tex: u32 = 0;
-    let gl_tex_ptr: *mut u32 = &mut gl_tex;
-    unsafe {
-        gl::GenTextures(1, gl_tex_ptr);
-        gl::BindTexture(gl::TEXTURE_2D, gl_tex);
-    
-        assert!(gl_tex != 0, "GL Texture cannot be empty");
-        gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGB as i32, 8, 8, 0, gl::RGB, gl::UNSIGNED_BYTE, img_ptr as *const std::ffi::c_void);
-        gl::GenerateMipmap(gl::TEXTURE_2D);
-    }
-
-
-    // let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image, (8, 8));
-    // let opengl_texture = glium::texture::Texture2d::new(&display, raw_image).unwrap();
-    // let opengl_texture = glium::texture::Texture2d::empty(&display, 4, 4).unwrap();
-
-    let kernel_src = r#"
-    __kernel void add(__global float* buffer, float scalar) {
-        buffer[get_global_id(0)] += scalar;
-    }
-    "#;
-
-    // let ocl_pq = ProQue::builder()
-    //         .context(context)
-    //         .build()
-    //         .expect("Build ProQue");
+    let texture_data = vec![0u8; dims[0]];
+    let texture = unsafe {
+        let mut texture = 0;
+        gl::GenTextures(1, &mut texture);
+        gl::BindTexture(gl::TEXTURE_2D, texture); 
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as GLint);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as GLint);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as GLint);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
+        assert!(texture != 0, "GL Texture cannot be empty");
+        gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RGBA as GLint, 8, 8, 0, gl::RGBA, gl::UNSIGNED_BYTE, texture_data.as_ptr() as *const u8 as *const c_void);
+        // gl::GenerateMipmap(gl::TEXTURE_2D);
+        texture
+    };
 
     // Create a `Buffer`: TODO
     let cl_buffer = unsafe {
@@ -94,12 +109,11 @@ fn main() {
             &context,
             gl::TEXTURE_2D,
             0,
-            gl_tex,
-            ocl::core::MEM_READ_WRITE
+            texture,
+            ocl::core::MEM_READ_WRITE,
         ).unwrap()
     };
-    // let cl_buffer = ocl::Buffer::<u8>::from_gl_buffer(&queue, None, gl_buff).unwrap();
-    let mut vec = vec![0u8; dims[0]];
+
     // let cl_buffer = ocl::Buffer::builder().queue(queue.clone()).len(dims[0]).copy_host_slice(&vec).build().unwrap();
     // let cl_buffer = unsafe {
     //     ocl::core::create_buffer(
@@ -149,8 +163,8 @@ fn main() {
     queue.finish().unwrap(); //sync up before switching to arrayfire
 
     // Add custom device, context and associated queue to ArrayFire
-    afcl::add_device_context(device_id.as_raw(), context.as_ptr(), queue.as_ptr());
-    afcl::set_device_context(device_id.as_raw(), context.as_ptr());
+    afcl::add_device_context(device.as_raw(), context.as_ptr(), queue.as_ptr());
+    afcl::set_device_context(device.as_raw(), context.as_ptr());
     af::info();
 
     let mut af_buffer = af::Array::new_from_device_ptr(
@@ -160,22 +174,34 @@ fn main() {
     println!("CL buffer ptr: {:?}", cl_buffer.as_ptr());
     println!("CL buffer ptr: {:?}", cl_buffer.as_ptr() as *mut u8);
     println!("Current active device: {}", af::get_device());
-    af::af_print!("GPU Buffer before modification:", &af_buffer);
+    println!("hi");
+    // af::af_print!("GPU Buffer before modification:", &af_buffer);
 
-    af_buffer = af_buffer + 10u8;
+    // af_buffer = af_buffer + 10u8;
 
-    af::af_print!("GPU Buffer after modification:", &af_buffer);
+    // af::af_print!("GPU Buffer after modification:", &af_buffer);
+    println!("hi");
 
     af::sync(af::get_device());
     let mut vec = vec![0u8; dims[0]];
     unsafe {
         let ptr = af_buffer.device_ptr();
-        println!("ptr: {:?}", &ptr);
+        // println!("ptr: {:?}", &ptr);
         let obuf = ocl::core::Mem::from_raw_copied_ptr(ptr);
 
-        // Read results from the device into a vector:
+    //     // Read results from the device into a vector:
+        ocl::core::enqueue_read_buffer(
+            &queue,
+            &obuf,
+            true,
+            0,
+            &mut vec,
+            None::<ocl::core::Event>,
+            None::<&mut ocl::core::Event>
+        ).unwrap();
        
     }
+    println!("hi");
     println!("GPU buffer on host after ArrayFire operation: {:?}", vec);
 
     // let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image, (512, 512));
@@ -225,7 +251,7 @@ fn main() {
     // ", None).unwrap();
 
     event_loop.run(move |event, _, control_flow| {
-
+        unsafe { gl::Viewport(0, 0, 800, 800) }
         // Update texture
         
 
@@ -234,9 +260,9 @@ fn main() {
         //     tex: &opengl_texture
         // };
 
-        // unsafe {
-        //     gl::Clear(gl::COLOR_BUFFER_BIT);
-        // }
+        unsafe {
+            gl::Clear(gl::COLOR_BUFFER_BIT);
+        }
 
         // drawing a frame
         // let mut target = display.draw();
@@ -247,8 +273,8 @@ fn main() {
         // target.clear_color(0.0, 1.0, 0.0, 1.0);
         // target.finish().unwrap();
 
-        // gl_window.swap_buffers().unwrap();
-        // std::thread::sleep(std::time::Duration::from_millis(5));
+        gl_window.swap_buffers().unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(5));
 
         match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
