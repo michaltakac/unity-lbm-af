@@ -671,6 +671,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gl_loader"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e32d96dd5f881490e537041d5532320812ba096097f07fccb4626578da0b99d3"
+dependencies = [
+ "cc",
+ "libc",
+]
+
+[[package]]
 name = "gleam"
 version = "0.6.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -887,6 +897,7 @@ dependencies = [
  "af-opencl-interop",
  "arrayfire",
  "gl",
+ "gl_loader",
  "glium",
  "image",
  "libc",
@@ -894,6 +905,7 @@ dependencies = [
  "ocl-core",
  "ocl-interop",
  "takeable-option",
+ "unity-native-plugin",
 ]
 
 [[package]]
@@ -1836,6 +1848,21 @@ name = "unicode-xid"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7fe0bb3479651439c9112f72b6c505038574c9fbb575ed1bf3b797fa39dd564"
+
+[[package]]
+name = "unity-native-plugin"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee032a6f2e4d0b8211159a34a559be866f5b92ec6e78e371d0fd577eae66f71d"
+dependencies = [
+ "unity-native-plugin-sys",
+]
+
+[[package]]
+name = "unity-native-plugin-sys"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "064d67e565a563238fb679a07c04e89d18515a38569f1881b288ff9c680316a5"
 
 [[package]]
 name = "version_check"

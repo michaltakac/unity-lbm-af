@@ -16,6 +16,8 @@ glium = "0.29.1"
 gl = "0.14.0"
 takeable-option = "0.5.0"
 image = "*"
+gl_loader = "0.1.2"
+unity-native-plugin = "0.4.1"
 
 [lib]
 name = "lbmaf"
