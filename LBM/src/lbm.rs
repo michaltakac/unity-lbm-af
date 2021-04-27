@@ -19,10 +19,10 @@ fn stream(f: &Array<FloatNum>) -> Array<FloatNum> {
   pdf
 }
 
-pub fn lbm_d2q9(out: &mut Vec<FloatNum>){
+pub fn lbm_d2q9(out: &mut Vec<u8>){
   // Grid length, number and spacing
-  let nx: u64 = 10;
-  let ny: u64 = 10;
+  let nx: u64 = 128;
+  let ny: u64 = 128;
 
   let total_nodes = nx * ny;
 
@@ -111,7 +111,7 @@ pub fn lbm_d2q9(out: &mut Vec<FloatNum>){
           - (1.5 as FloatNum) * (&tile(&flat(&u_sq), dim4!(9))));
 
   let mut iter: u64 = 0;
-  let maxiter: u64 = 10000;
+  let maxiter: u64 = 1000;
 
   sync(0);
   println!("Simulation started...");
@@ -163,7 +163,8 @@ pub fn lbm_d2q9(out: &mut Vec<FloatNum>){
       eval!(results[on] = constant::<FloatNum>(FloatNum::NAN, on.dims()));
     //   eval!(out[span, span] = flip(&transpose(&normalize(&results), false), 0).cast::<f32>());
       results = flip(&transpose(&normalize(&results), false), 0).cast::<f32>();
-      results.host(out);
+      let colors = tile(&flat(&results), dim4!(1, 1, 4));
+      colors.host(out);
 
       sync(0);
       iter += 1;

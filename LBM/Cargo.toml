@@ -18,6 +18,8 @@ takeable-option = "0.5.0"
 image = "*"
 gl_loader = "0.1.2"
 unity-native-plugin = "0.4.1"
+log = "0.4.14"
+log4rs = "1.0.0"
 
 [lib]
 name = "lbmaf"
