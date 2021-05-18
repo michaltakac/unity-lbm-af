@@ -6,34 +6,47 @@ using UnityEngine;
 
 public class Sim : MonoBehaviour
 {
-    [DllImport("lbmaf")]
-    static extern IntPtr init_array();
-    [DllImport("lbmaf")]
-    static extern IntPtr init_array_ptr();
-
-    private byte[] buffer;
+	private static byte[] buffer;
+	public UInt32 size;
+	public UInt32 domain_width = 128;
+	public UInt32 domain_height = 128;
 	private Texture2D image;
-	private IntPtr handle;
+	
 
 	void Start()
 	{
-		buffer = new byte[128*128*4];
-		image = new Texture2D(128, 128, TextureFormat.RGBA32, false);
+		size = domain_width * domain_height * 4;
+		buffer = new byte[size];
+		image = new Texture2D(domain_width, domain_height, TextureFormat.RGBA32, false);
 		GetComponent<Renderer>().material.mainTexture = image;
-        Debug.Log("Simulation started!");
-        handle = init_array();
-        Debug.Log("Results pointer (host): " + handle); 
-        Marshal.Copy(handle, buffer, 0, 128*128*4);
-        image.LoadRawTextureData(buffer);
-        image.Apply();
+
+        bool isSimReady = InitSimulation();
+		if (!isSimReady) return;
+
+		Debug.Log("Simulation initialized.");
+		StartCoroutine("GetData");
 	}
+
+
+	public IEnumerator GetData()
+    {
+		while(true) {
+			LBM.SimulateNextIteration();
+			LBM.GetSimData();
+			LBM.CopyResultsToBuffer((IntPtr)_data_handle, buffer, size);
+			image.LoadRawTextureData(buffer);
+			image.Apply();
+			sim_timestep++;
+			yield return null;
+		}
+    }
 	
 	void Update()
 	{
-		handle = init_array();
-		Marshal.Copy(handle, buffer, 0, 128*128*4);
-		image.LoadRawTextureData(buffer);
-		image.Apply();
-		// TODO: clear the host data pointer?
+
+	}
+
+	void OnDestroy () {
+		// DisposeSim(); // TODO: implement disposing on Rust side
 	}
 }

@@ -1,38 +1,20 @@
 [package]
-name = "lbm-af"
+name = "lbmaf"
 version = "0.1.0"
-description = "LBM solver using ArrayFire"
+description = "LBM solver using ArrayFire with visualization in Unity"
 authors = ["Michal Takac <takacmichal92@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 libc = "0.2.90"
 arrayfire = "3.8"
-af-opencl-interop = "3.7.1"
-ocl = "0.19"
-ocl-core = "0.11.2"
-ocl-interop = "0.1"
-glium = "0.29.1"
-gl = "0.14.0"
-takeable-option = "0.5.0"
-image = "*"
-gl_loader = "0.1.2"
+time = "0.1.*"
 unity-native-plugin = "0.4.1"
 log = "0.4.14"
 log4rs = "1.0.0"
 
 [lib]
 name = "lbmaf"
+path = "src/lib.rs"
 crate-type = ["staticlib", "rlib", "dylib"]
 
-[[example]]
-name = "channel" # examples/d2q9_bgk_channel.rs
-path = "examples/d2q9_bgk_channel.rs"
-
-[[example]]
-name = "lid" # examples/d2q9_bgk_lid.rs
-path = "examples/d2q9_bgk_lid.rs"
-
-[[example]]
-name = "lid3" # examples/d3q27_bgk_lid.rs
-path = "examples/d3q27_bgk_lid.rs"
