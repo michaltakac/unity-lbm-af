@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Sim : MonoBehaviour
 {
@@ -19,10 +20,9 @@ public class Sim : MonoBehaviour
     // radius of the cylinder
     public static uint obstacle_r = (uint)domain_height / 10 + 1;
 
-
-	public float inflowDensity = 1.0f;
-    public float inflowSpeed = 0.1f;
-	public float reynoldsNumber = 220.0f;
+	public Slider inflowSpeedSlider;
+	public Slider inflowDensitySlider;
+	public Slider reynoldsNumberSlider;
 
     public static float inflow_density;
 	public static float inflow_speed;
@@ -44,9 +44,9 @@ public class Sim : MonoBehaviour
     void Start()
     {
 		// Initialize
-		inflow_speed = inflowSpeed;
-		inflow_density = inflowDensity;
-		re = reynoldsNumber;
+		inflow_speed = inflowSpeedSlider.value;
+		inflow_density = inflowDensitySlider.value;
+		re = reynoldsNumberSlider.value;
 		nu = inflow_speed * 2.0f * obstacle_r / re;
     	tau = 3.0f * nu + 0.5f;
 		omega_static = 1.0f / tau;
@@ -71,9 +71,9 @@ public class Sim : MonoBehaviour
     {
         while (true)
         {
-			inflow_speed = inflowSpeed;
-			inflow_density = inflowDensity;
-			re = reynoldsNumber;
+			inflow_speed = inflowSpeedSlider.value;
+			inflow_density = inflowDensitySlider.value;
+			re = reynoldsNumberSlider.value;
 			nu = inflow_speed * 2.0f * obstacle_r / re;
 			tau = 3.0f * nu + 0.5f;
 			omega = omega_static = 1.0f / tau;

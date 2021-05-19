@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="main.uss" />
+    <ui:VisualElement style="height: 272.6667px; top: 10px; font-size: 16px; -unity-text-align: middle-left; white-space: normal; margin-left: 8px; margin-right: 8px; margin-top: 8px; margin-bottom: 8px;">
+        <ui:Label text="LBM Simulation" display-tooltip-when-elided="true" style="top: auto;" />
+        <ui:Slider picking-mode="Ignore" label="Inflow Density" value="42" high-value="100" />
+        <ui:Slider picking-mode="Ignore" label="Inflow Speed" value="42" high-value="100" />
+        <ui:Slider picking-mode="Ignore" label="Reynolds Number" value="42" high-value="100" />
+    </ui:VisualElement>
+</ui:UXML>
