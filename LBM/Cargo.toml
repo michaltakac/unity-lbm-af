@@ -10,8 +10,6 @@ libc = "0.2.90"
 arrayfire = "3.8"
 time = "0.1.*"
 unity-native-plugin = "0.4.1"
-log = "0.4.14"
-log4rs = "1.0.0"
 
 [lib]
 name = "lbmaf"

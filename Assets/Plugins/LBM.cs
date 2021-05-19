@@ -10,10 +10,14 @@ public class LBM
 	private UInt32 sim_timestep = 0;
 
 	[DllImport("lbmaf")]
-    private static extern bool init_sim(out IntPtr sim_handle, out IntPtr data_handle);
-	public static bool InitSimulation()
+    private static extern bool init_sim(out IntPtr sim_handle, out IntPtr data_handle,
+            UInt32 width, UInt32 height, Float32 inflow_ux,
+            Float32 omega, UInt32 obstacle_x, UInt32 obstacle_y, UInt32 obstacle_r);
+	public static bool InitSimulation(UInt32 w, UInt32 h, Float32 rho0, Float32 in_ux,
+            Float32 om, UInt32 obs_x, UInt32 obs_y, UInt32 obs_r)
     {
-        return init_sim(out _sim_handle, out _data_handle);
+        return init_sim(out _sim_handle, out _data_handle, w, h, rho0, in_ux,
+            om, obs_x, obs_y, obs_r);
     }
 
 	[DllImport("lbmaf")]
@@ -24,10 +28,10 @@ public class LBM
     }
 
 	[DllImport("lbmaf")]
-    private static extern void simulate(IntPtr handle);
-	public static void SimulateNextIteration()
+    private static extern void simulate(IntPtr handle, Float32 inflow_density, Float32 inflow_ux, Float32 omega);
+	public static void SimulateNextIteration(Float32 in_rho, Float32 in_ux, Float32 om)
     {
-        simulate(_sim_handle);
+        simulate(_sim_handle, in_rho, in_ux, om);
     }
 
 	[DllImport("lbmaf")]

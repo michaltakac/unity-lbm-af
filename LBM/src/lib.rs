@@ -1,23 +1,35 @@
-#[macro_use]
-mod debug;
-pub mod lbm;
-pub mod grid;
-pub mod boundary;
-pub mod geometry;
-pub mod physics;
-pub mod traits;
-pub mod streaming;
-pub mod distribution;
-pub mod solver;
+mod lbm;
 use lbm::Sim;
 use std::ptr;
 
+#[macro_use]
+mod debug;
+
 pub type FloatNum = f32;
 
-
 #[no_mangle]
-pub extern "C" fn init_sim(ptr: *mut *mut Sim, data_ptr: *mut *mut u8) -> bool {
-    match Sim::init_sim_channel() {
+pub extern "C" fn init_sim(
+    ptr: *mut *mut Sim,
+    data_ptr: *mut *mut u8,
+    width: u32,
+    height: u32,
+    initial_density: FloatNum,
+    initial_ux: FloatNum,
+    omega: FloatNum,
+    obstacle_x: u32,
+    obstacle_y: u32,
+    obstacle_r: u32,
+) -> bool {
+    match Sim::init_sim_channel(
+        width.into(),
+        height.into(),
+        initial_density,
+        initial_ux,
+        omega,
+        obstacle_x.into(),
+        obstacle_y.into(),
+        obstacle_r.into(),
+    ) {
         Ok(sim) => {
             unsafe {
                 *ptr = sim.to_ptr();
@@ -37,9 +49,9 @@ pub extern "C" fn init_sim(ptr: *mut *mut Sim, data_ptr: *mut *mut u8) -> bool {
 }
 
 #[no_mangle]
-pub extern "C" fn simulate(ptr: *mut Sim) {
+pub extern "C" fn simulate(ptr: *mut Sim, inflow_density: FloatNum, inflow_ux: FloatNum, omega: FloatNum) {
     if !ptr.is_null() {
-        Sim::from_ptr(ptr).simulate();
+        Sim::from_ptr(ptr).simulate(inflow_density, inflow_ux, omega);
     }
 }
 
