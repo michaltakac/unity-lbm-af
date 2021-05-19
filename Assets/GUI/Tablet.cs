@@ -2,6 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+#if UNITY_EDITOR
+    using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,9 +20,11 @@ using UnityEngine.UI;
      {
          if (ObjectColor != currentColor)
          {
-             //helps stop memory leaks
-             if (materialColored != null)
-                 UnityEditor.AssetDatabase.DeleteAsset(UnityEditor.AssetDatabase.GetAssetPath(materialColored));
+            #if UNITY_EDITOR
+                //helps stop memory leaks
+                if (materialColored != null)
+                    UnityEditor.AssetDatabase.DeleteAsset(UnityEditor.AssetDatabase.GetAssetPath(materialColored));
+            #endif
  
              //create a new material
              materialColored = new Material(Shader.Find("Diffuse"));
