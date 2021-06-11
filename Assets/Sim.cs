@@ -48,7 +48,6 @@ public class Sim : MonoBehaviour
     {
 		// Initialize
         paused = true; // Start in paused state
-        maxImagesInHistory = 10;
 		inflow_speed = inflowSpeedSlider.value;
 		inflow_density = inflowDensitySlider.value;
 		re = reynoldsNumberSlider.value;
