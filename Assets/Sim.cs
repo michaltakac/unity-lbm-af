@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class Sim : MonoBehaviour
 {
@@ -23,6 +24,7 @@ public class Sim : MonoBehaviour
 	public Slider inflowSpeedSlider;
 	public Slider inflowDensitySlider;
 	public Slider reynoldsNumberSlider;
+    public Button playbackButton;
 
     public static float inflow_density;
 	public static float inflow_speed;
@@ -39,11 +41,14 @@ public class Sim : MonoBehaviour
     private static byte[] buffer;
     private Int32 size;
     private Texture2D image;
+    private bool paused;
 
 
     void Start()
     {
 		// Initialize
+        paused = true; // Start in paused state
+        maxImagesInHistory = 10;
 		inflow_speed = inflowSpeedSlider.value;
 		inflow_density = inflowDensitySlider.value;
 		re = reynoldsNumberSlider.value;
@@ -63,7 +68,9 @@ public class Sim : MonoBehaviour
         if (!isSimReady) return;
 
         Debug.Log("Simulation initialized.");
-        StartCoroutine("GetData");
+        
+        Button btn = playbackButton.GetComponent<Button>();
+		btn.onClick.AddListener(ToggleSimPlayback);
     }
 
 
@@ -87,9 +94,19 @@ public class Sim : MonoBehaviour
         }
     }
 
+    void ToggleSimPlayback() {
+        paused = !paused;
+        if (paused) {
+            StopCoroutine("GetData");
+            playbackButton.GetComponentInChildren<Text>().text = "Resume simulation";
+        } else {
+            StartCoroutine("GetData");
+            playbackButton.GetComponentInChildren<Text>().text = "Pause simulation";
+        }
+    }
+
     void Update()
     {
-
     }
 
     void OnDestroy()
