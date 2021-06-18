@@ -20,7 +20,7 @@ pub extern "C" fn init_sim(
     obstacle_y: u32,
     obstacle_r: u32,
 ) -> bool {
-    match Sim::init_sim_channel(
+    match Sim::new(
         width.into(),
         height.into(),
         initial_density,

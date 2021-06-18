@@ -66,7 +66,7 @@ impl<'a> Sim {
         self.results_ptr
     }
 
-    pub fn init_sim_channel(
+    pub fn new(
         nx: u64,
         ny: u64,
         initial_density: FloatNum,

@@ -8,7 +8,7 @@ using UnityEngine.Events;
 
 public class Sim : MonoBehaviour
 {
-	public static int domain_width = 300;
+    public static int domain_width = 300;
     public static int domain_height = 100;
 
     // Physical parameters.
@@ -21,13 +21,13 @@ public class Sim : MonoBehaviour
     // radius of the cylinder
     public static uint obstacle_r = (uint)domain_height / 10 + 1;
 
-	public Slider inflowSpeedSlider;
-	public Slider inflowDensitySlider;
-	public Slider reynoldsNumberSlider;
+    public Slider inflowSpeedSlider;
+    public Slider inflowDensitySlider;
+    public Slider reynoldsNumberSlider;
     public Button playbackButton;
 
     public static float inflow_density;
-	public static float inflow_speed;
+    public static float inflow_speed;
     // Reynolds number
     public static float re;
     // Kinematic viscosity
@@ -35,7 +35,7 @@ public class Sim : MonoBehaviour
     // Relaxation time
     public static float tau;
     // Relaxation parameter
-	public float omega;
+    public float omega;
     public static float omega_static;
 
     private static byte[] buffer;
@@ -43,19 +43,18 @@ public class Sim : MonoBehaviour
     private Texture2D image;
     private bool paused;
 
-
     void Start()
     {
-		// Initialize
+		    // Initialize
         paused = true; // Start in paused state
-		inflow_speed = inflowSpeedSlider.value;
-		inflow_density = inflowDensitySlider.value;
-		re = reynoldsNumberSlider.value;
-		nu = inflow_speed * 2.0f * obstacle_r / re;
-    	tau = 3.0f * nu + 0.5f;
-		omega_static = 1.0f / tau;
+        inflow_speed = inflowSpeedSlider.value;
+        inflow_density = inflowDensitySlider.value;
+        re = reynoldsNumberSlider.value;
+        nu = inflow_speed * 2.0f * obstacle_r / re;
+        tau = 3.0f * nu + 0.5f;
+        omega_static = 1.0f / tau;
 
-		// ---------
+        // ---------
         size = domain_width * domain_height * 4;
         buffer = new byte[size];
         image = new Texture2D(domain_width, domain_height, TextureFormat.RGBA32, false);
@@ -67,9 +66,9 @@ public class Sim : MonoBehaviour
         if (!isSimReady) return;
 
         Debug.Log("Simulation initialized.");
-        
+
         Button btn = playbackButton.GetComponent<Button>();
-		btn.onClick.AddListener(ToggleSimPlayback);
+		    btn.onClick.AddListener(ToggleSimPlayback);
     }
 
 
@@ -77,12 +76,12 @@ public class Sim : MonoBehaviour
     {
         while (true)
         {
-			inflow_speed = inflowSpeedSlider.value;
-			inflow_density = inflowDensitySlider.value;
-			re = reynoldsNumberSlider.value;
-			nu = inflow_speed * 2.0f * obstacle_r / re;
-			tau = 3.0f * nu + 0.5f;
-			omega = omega_static = 1.0f / tau;
+            inflow_speed = inflowSpeedSlider.value;
+            inflow_density = inflowDensitySlider.value;
+            re = reynoldsNumberSlider.value;
+            nu = inflow_speed * 2.0f * obstacle_r / re;
+            tau = 3.0f * nu + 0.5f;
+            omega = omega_static = 1.0f / tau;
 
             LBMAF.SimulateNextIteration(inflow_density, inflow_speed, omega_static);
             LBMAF.GetSimData();
@@ -111,9 +110,9 @@ public class Sim : MonoBehaviour
     void OnDestroy()
     {
         image = null;
-		buffer = null;
-		GetComponent<Renderer>().material.mainTexture = null;
-		// DisposeSim();
-		Debug.Log("Destroyed the simulation resources.");
+        buffer = null;
+        GetComponent<Renderer>().material.mainTexture = null;
+        // DisposeSim();
+        Debug.Log("Destroyed the simulation resources.");
     }
 }
